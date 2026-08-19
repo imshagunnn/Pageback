@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}PageBack{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'web/css/base.css' %}">
+</head>
+<body>
+    <header class="site">
+        <a class="mark" href="{% url 'landing' %}">PageBack</a>
+        <nav class="nav">
+            <a href="{% url 'demo' %}">Explore demo</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}">Library</a>
+                <form method="post" action="{% url 'logout' %}" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="linkish">Sign out</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Sign in</a>
+                <a class="btn compact" href="{% url 'signup' %}">Create account</a>
+            {% endif %}
+        </nav>
+    </header>
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer class="site-foot">
+        <p>PageBack — Remember what happened. Read on.</p>
+    </footer>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

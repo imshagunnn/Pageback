@@ -1,0 +1,54 @@
+{% extends "web/base.html" %}
+{% load static %}
+{% block title %}White Nights demo — PageBack{% endblock %}
+{% block content %}
+<section class="demo-head">
+    <p class="eyebrow">Explore without an account</p>
+    <h1>White Nights</h1>
+    <p class="lede">You paused after Night 2. PageBack will only use what has happened so far.</p>
+    <p class="boundary">Reading boundary · Nights 1–2</p>
+</section>
+
+<section class="demo-grid">
+    <aside class="recap-board" data-recap-board>
+        <p class="board-kicker">Catch me up</p>
+        <h2>How much do you want?</h2>
+        <div class="mode-row" role="tablist" aria-label="Recap length">
+            <button type="button" class="mode is-on" data-mode="quick" aria-pressed="true">30 seconds</button>
+            <button type="button" class="mode" data-mode="standard" aria-pressed="false">2 minutes</button>
+            <button type="button" class="mode" data-mode="detailed" aria-pressed="false">5 minutes</button>
+        </div>
+        <div class="recap-copy" data-recap-copy></div>
+    </aside>
+    <div>
+        <h2>Who is this?</h2>
+        <p class="note">Names you can tap. Nothing from later nights.</p>
+        <div class="cast stacked">
+            <button type="button" class="cast-card" data-who="narrator">
+                <strong>The Narrator</strong>
+                <span>First appeared · Night 1</span>
+            </button>
+            <button type="button" class="cast-card" data-who="nastenka">
+                <strong>Nastenka</strong>
+                <span>First appeared · Night 1</span>
+            </button>
+            <button type="button" class="cast-card" data-who="lodger">
+                <strong>The Lodger</strong>
+                <span>Spoken of · Night 1</span>
+            </button>
+            <p class="who-panel" data-who-panel>Choose a character.</p>
+        </div>
+        <h2 class="ask-title">Ask about the story</h2>
+        <div class="ask-list">
+            <button type="button" class="ask" data-ask="trust">Why does Nastenka talk to the narrator?</button>
+            <button type="button" class="ask" data-ask="waiting">Who is she waiting for?</button>
+            <button type="button" class="ask" data-ask="ending">Does Nastenka stay with him?</button>
+        </div>
+        <p class="who-panel ask-answer" data-ask-panel>A question stays inside your reading boundary.</p>
+        <p class="note">When you are ready for your own books, <a href="{% url 'signup' %}">create an account</a>.</p>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'web/js/companion.js' %}"></script>
+{% endblock %}

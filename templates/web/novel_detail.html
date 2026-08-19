@@ -1,0 +1,79 @@
+{% extends "web/base.html" %}
+{% block title %}{{ novel.title }} — PageBack{% endblock %}
+{% block content %}
+<section class="library novel-page">
+    <p class="eyebrow">Your reading dashboard</p>
+    <h1>{{ novel.title }}</h1>
+    {% if novel.author %}<p class="lede">{{ novel.author }}</p>{% endif %}
+    <div class="actions">
+        <a class="btn" href="{% url 'dashboard' %}">Back to library</a>
+        <a class="btn primary" href="#analysis">View analysis</a>
+    </div>
+    <div class="boundary-panel">
+        <div>
+            <p class="board-kicker">Spoiler-safe boundary</p>
+            <h2>How far have you read?</h2>
+            <p>PageBack only uses chapters up to this point for your summary and character analysis. This book has {{ chapter_count }} available chapters.</p>
+            {% if progress.current_chapter %}<p class="boundary">Saved reading boundary · Chapter {{ progress.boundary_chapter_number }}</p>{% endif %}
+        </div>
+        <form method="post" class="boundary-form">
+            {% csrf_token %}
+            {{ form.through_chapter.errors }}
+            <label for="id_from_chapter">Recap from chapter</label>
+            <input id="id_from_chapter" name="from_chapter" type="number" min="1" max="{{ chapter_count }}" value="{{ form.from_chapter.value|default:1 }}" required>
+            <label for="id_through_chapter">Through chapter</label>
+            <input id="id_through_chapter" name="through_chapter" type="number" min="1" max="{{ chapter_count }}" value="{{ form.through_chapter.value|default:1 }}" required>
+            <button class="btn primary" type="submit">Analyze my reading</button>
+        </form>
+    </div>
+    <div class="analysis-grid" id="analysis">
+        <article class="recap-board">
+            <p class="board-kicker">Catch me up</p>
+            <h2>How much do you want?</h2>
+            <div class="mode-row" role="tablist" aria-label="Recap length">
+                <button type="button" class="mode is-on" data-recap-mode="quick">30 seconds</button>
+                <button type="button" class="mode" data-recap-mode="standard">2 minutes</button>
+                <button type="button" class="mode" data-recap-mode="detailed">5 minutes</button>
+            </div>
+            {% if novel.analysis.summary %}
+                <div class="recap-copy" data-recap-output>{{ novel.analysis.recaps.quick|default:novel.analysis.summary|linebreaks }}</div>
+                <p class="board-meta">Through chapter {{ novel.analysis_boundary }} · {{ novel.analysis.word_count }} words · {{ novel.analysis.provider|title }} analysis</p>
+                {% if novel.analysis.ai_error %}<p class="ai-status">{{ novel.analysis.ai_error }}</p>{% endif %}
+            {% else %}<p class="empty">Choose your chapter boundary above to generate your first summary.</p>{% endif %}
+        </article>
+        <article class="recap-board">
+            <p class="board-kicker">Characters found</p>
+            {% if novel.analysis.character_details %}
+                <div class="cast stacked">{% for character in novel.analysis.character_details %}<button type="button" class="cast-card" data-character-detail="{{ character.detail|escape }}"><strong>{{ character.name }}</strong><span>Appears in selected chapters</span></button>{% endfor %}</div>
+                <p class="who-panel" data-character-output>Choose a character.</p>
+            {% else %}<p>No character names detected yet.</p>{% endif %}
+        </article>
+    </div>
+    <section class="story-tools">
+        <h2>Ask about the story</h2>
+        <p class="note">Answers stay inside chapters 1–{{ novel.analysis_boundary }}.</p>
+        <div class="ask-list">{% for item in novel.analysis.questions %}<button type="button" class="ask" data-question-answer="{{ item.answer|escape }}">{{ item.question }}</button>{% endfor %}</div>
+        <p class="who-panel" data-question-output>A question stays inside your reading boundary.</p>
+    </section>
+</section>
+{% endblock %}
+{% block scripts %}
+{{ novel.analysis.recaps|json_script:"recap-data" }}
+<script>
+    const recapData = JSON.parse(document.getElementById("recap-data").textContent);
+    document.querySelectorAll("[data-recap-mode]").forEach((button) => button.addEventListener("click", () => {
+        document.querySelectorAll("[data-recap-mode]").forEach((item) => item.classList.toggle("is-on", item === button));
+        document.querySelector("[data-recap-output]").textContent = recapData[button.dataset.recapMode] || recapData.quick || "";
+    }));
+    document.querySelectorAll("[data-character-detail]").forEach((button) => button.addEventListener("click", () => {
+        document.querySelectorAll("[data-character-detail]").forEach((item) => item.classList.remove("is-on"));
+        button.classList.add("is-on");
+        document.querySelector("[data-character-output]").textContent = button.dataset.characterDetail;
+    }));
+    document.querySelectorAll("[data-question-answer]").forEach((button) => button.addEventListener("click", () => {
+        document.querySelectorAll("[data-question-answer]").forEach((item) => item.classList.remove("is-on"));
+        button.classList.add("is-on");
+        document.querySelector("[data-question-output]").textContent = button.dataset.questionAnswer;
+    }));
+</script>
+{% endblock %}

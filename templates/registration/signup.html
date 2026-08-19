@@ -1,0 +1,14 @@
+{% extends "web/base.html" %}
+{% block title %}Create account — PageBack{% endblock %}
+{% block content %}
+<section class="auth">
+    <h1>Create your account</h1>
+    <p class="lede">Keep a private place in each book. Recaps and questions will never look ahead of you.</p>
+    <form method="post" action="{% url 'signup' %}" class="auth-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn primary">Create account</button>
+    </form>
+    <p class="note">Already have one? <a href="{% url 'login' %}">Sign in</a>. Or <a href="{% url 'demo' %}">explore the demo</a> first.</p>
+</section>
+{% endblock %}

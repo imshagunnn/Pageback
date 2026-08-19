@@ -1,0 +1,31 @@
+{% extends "web/base.html" %}
+{% block title %}Import a novel — PageBack{% endblock %}
+{% block content %}
+<section class="library">
+    <p class="eyebrow">Build your library</p>
+    <h1>Import a novel</h1>
+    <p class="lede">Upload the book once. PageBack extracts its text and prepares an automatic reading analysis.</p>
+    <form method="post" enctype="multipart/form-data" class="auth-form import-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <p>
+            {{ form.title.errors }}
+            {{ form.title.label_tag }}
+            {{ form.title }}
+        </p>
+        <p>
+            {{ form.author.errors }}
+            {{ form.author.label_tag }}
+            {{ form.author }}
+        </p>
+        <p>
+            {{ form.text_file.errors }}
+            {{ form.text_file.label_tag }}
+            {{ form.text_file }}
+            <small>{{ form.text_file.help_text }}</small>
+        </p>
+        <button type="submit" class="btn primary">Add to library</button>
+    </form>
+    <p class="note"><a href="{% url 'dashboard' %}">Back to your library</a></p>
+</section>
+{% endblock %}

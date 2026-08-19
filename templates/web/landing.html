@@ -1,0 +1,78 @@
+{% extends "web/base.html" %}
+{% load static %}
+{% block title %}PageBack — Remember what happened. Read on.{% endblock %}
+{% block content %}
+<section class="hero-grid">
+    <div>
+        <p class="eyebrow">A memory layer for the novel you are reading</p>
+        <h1>Forgot where you left off?</h1>
+        <p class="lede">PageBack remembers the story for you — characters, quiet details, and where things actually stand — without spoiling what you have not read yet.</p>
+        <p class="tag">Remember what happened. Read on.</p>
+        <div class="actions">
+            <a class="btn primary" href="{% url 'signup' %}">Create account</a>
+            <a class="btn" href="{% url 'demo' %}">Explore demo</a>
+        </div>
+        <p class="note">Already returning? <a href="{% url 'login' %}">Sign in</a>. You can try White Nights first — no account needed.</p>
+    </div>
+    <aside class="recap-board" data-recap-board>
+        <p class="board-kicker">Catch me up</p>
+        <h2>How much do you want?</h2>
+        <p class="board-meta">Sample · White Nights · through Night 2</p>
+        <div class="mode-row" role="tablist" aria-label="Recap length">
+            <button type="button" class="mode is-on" data-mode="quick" aria-pressed="true">30 seconds</button>
+            <button type="button" class="mode" data-mode="standard" aria-pressed="false">2 minutes</button>
+            <button type="button" class="mode" data-mode="detailed" aria-pressed="false">5 minutes</button>
+        </div>
+        <div class="recap-copy" data-recap-copy></div>
+        <p class="board-foot">This sample stays inside Nights 1–2. Later nights stay closed.</p>
+    </aside>
+</section>
+
+<section class="band">
+    <h2>How it works</h2>
+    <div class="triple">
+        <article>
+            <p class="step">1</p>
+            <h3>Mark your place</h3>
+            <p>Tell PageBack which chapter you have reached. That chapter becomes the boundary. Nothing after it is used.</p>
+        </article>
+        <article>
+            <p class="step">2</p>
+            <h3>Catch up in your time</h3>
+            <p>A 30-second jolt, a two-minute walk back in, or a five-minute sitting with the story — you choose the depth.</p>
+        </article>
+        <article>
+            <p class="step">3</p>
+            <h3>Ask, then continue</h3>
+            <p>Who is this? What changed? What should I remember? Answers come only from pages you have already read.</p>
+        </article>
+    </div>
+</section>
+
+<section class="split" id="demo">
+    <div>
+        <p class="eyebrow">Public-domain sample</p>
+        <h2>White Nights</h2>
+        <p class="lede">Dostoevsky’s Petersburg nights, used here because the text can be shared freely. Open the demo, pick a recap length, and tap a name.</p>
+        <a class="btn primary" href="{% url 'demo' %}">Open the White Nights demo</a>
+    </div>
+    <div class="cast">
+        <button type="button" class="cast-card" data-who="narrator">
+            <strong>The Narrator</strong>
+            <span>A lonely walker of the city</span>
+        </button>
+        <button type="button" class="cast-card" data-who="nastenka">
+            <strong>Nastenka</strong>
+            <span>The young woman he meets</span>
+        </button>
+        <button type="button" class="cast-card" data-who="lodger">
+            <strong>The Lodger</strong>
+            <span>The man she is waiting for</span>
+        </button>
+        <p class="who-panel" data-who-panel>Tap a name to remember who they are — only from Nights 1 and 2.</p>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'web/js/companion.js' %}"></script>
+{% endblock %}
