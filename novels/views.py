@@ -53,6 +53,9 @@ def novel_detail(request, novel_id):
 		novel.analysis = analyze_text(
 			"\n\n".join(chapter.content for chapter in chapters_through_boundary(novel, current_boundary))
 		)
+		novel.analysis["ai_error"] = "This analysis was created locally before AI was configured. Submit the boundary again to run AI analysis."
+	elif novel.analysis.get("provider") == "local" and not novel.analysis.get("ai_error"):
+		novel.analysis["ai_error"] = "This analysis was created locally before AI was configured. Submit the boundary again to run AI analysis."
 	if request.method == "POST":
 		form = AnalysisForm(request.POST)
 		if form.is_valid() and form.cleaned_data["through_chapter"] <= len(chapters):

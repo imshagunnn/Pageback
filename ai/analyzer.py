@@ -69,9 +69,8 @@ def analyze_text_with_ai(text: str, title: str, boundary: int) -> dict:
         return analysis
     except Exception as error:
         fallback = analyze_text(text)
+        fallback["ai_error"] = f"AI analysis failed ({type(error).__name__}). Local analysis was used."
         if "insufficient_quota" in str(error) or "exceeded your current quota" in str(error):
             fallback["provider"] = "local"
             fallback["ai_error"] = "AI quota is exhausted. Add API billing or credits to enable AI analysis."
-        else:
-            fallback["ai_error"] = "AI could not be reached, so local analysis was used."
         return fallback

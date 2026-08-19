@@ -192,4 +192,17 @@ def test_ai_fallback_explains_provider_failure(monkeypatch, settings):
     monkeypatch.setattr(analyzer, "GeminiProvider", FailingProvider)
     result = analyzer.analyze_text_with_ai("A short chapter.", "Book", 1)
     assert result["provider"] == "local"
-    assert "could not be reached" in result["ai_error"]
+    assert "AI analysis failed" in result["ai_error"]
+
+
+def test_legacy_local_analysis_explains_how_to_regenerate(client, db):
+    user = User.objects.create_user(username="legacy_reader", password="Pageback-check-2026")
+    novel = Novel.objects.create(
+        owner=user,
+        title="Legacy Book",
+        analysis={"summary": "Old local summary", "provider": "local"},
+    )
+    Chapter.objects.create(novel=novel, chapter_number=1, content="An old chapter.")
+    client.force_login(user)
+    response = client.get(reverse("novel_detail", kwargs={"novel_id": novel.id}))
+    assert b"created locally before AI was configured" in response.content
