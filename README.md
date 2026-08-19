@@ -1,60 +1,96 @@
 # PageBack
 
-Remember what happened. Read on.
+**PageBack — Remember what happened. Read on.**
 
-PageBack is a literary memory layer for novels you pause mid-read. It keeps characters, events, and details up to your current chapter, then offers spoiler-safe recaps.
+PageBack is a reading companion for people who pause a novel and later forget where they stopped. It imports books, preserves reading progress, creates spoiler-safe recaps, and helps readers remember characters, events, relationships, themes, and important details.
 
-This README will expand in Phase 12 (schema, API, AI pipeline). Phase 1 is project setup.
+## What It Does
 
-## Requirements
+- Account creation, login, logout, and private libraries
+- TXT, Markdown, PDF, and EPUB book import
+- Automatic chapter and section extraction
+- Reading boundary selection and chapter-range recaps
+- 30-second, 2-minute, and 5-minute catch-up views
+- Character profiles and first-appearance tracking
+- Themes, story details, and structured chapter analysis
+- Boundary-safe story questions and recap caching
+- Embedding chunks and retrieval filtered by the reader's chapter boundary
+- Public White Nights demo without an account
+- Health endpoint and OpenAPI documentation
 
-- Python 3.12+ (developed on 3.14)
-- A virtual environment
+## Technology Stack
 
-## Setup
+- **Backend:** Python 3.12+, Django 6, Django REST Framework
+- **Database:** SQLite for development, PostgreSQL-ready configuration
+- **Frontend:** Django templates, HTML, CSS, vanilla JavaScript
+- **AI layer:** Provider abstraction, structured JSON generation, embeddings, and local fallback analysis
+- **Document processing:** `pypdf` for PDF, `ebooklib` and BeautifulSoup for EPUB, UTF-8 text and Markdown support
+- **Retrieval:** Database-backed chapter chunks with spoiler-safe filtering and optional vectors
+- **Testing:** pytest, pytest-django, Django system checks
+- **Configuration:** `.env` environment variables via `python-dotenv`
 
-```bash
+## Quick Start
+
+```powershell
 python -m venv .venv
-# Windows
 .venv\Scripts\activate
-# macOS / Linux
-source .venv/bin/activate
-
 pip install -r requirements.txt
-copy .env.example .env   # Windows
-# cp .env.example .env   # macOS / Linux
-```
-
-Set `SECRET_KEY` and `GEMINI_API_KEY` in `.env`. PageBack uses the official Google Gemini SDK for chapter analysis, recaps, and embeddings.
-
-```bash
+copy .env.example .env
 python manage.py migrate
 python manage.py runserver
 ```
 
-Open http://127.0.0.1:8000/
+Open <http://127.0.0.1:8000/>.
 
-- Landing page: `/`
-- API health: `/api/health/`
-- Admin: `/admin/`
-- OpenAPI (after more endpoints exist): `/api/docs/`
+Set the secret key and local AI credentials in `.env`. Never commit `.env`; it is ignored by Git. The app falls back to local analysis when an external provider is unavailable.
 
-## Tests
+## Main Routes
 
-```bash
-pytest
+| Route | Purpose |
+|---|---|
+| `/` | Landing page or authenticated dashboard |
+| `/accounts/signup/` | Create an account |
+| `/accounts/login/` | Sign in |
+| `/dashboard/` | Private reading library |
+| `/novels/import/` | Import a book |
+| `/novels/<id>/` | Book dashboard and spoiler boundary |
+| `/demo/` | Public interactive White Nights demo |
+| `/api/health/` | API health check |
+| `/api/docs/` | OpenAPI documentation |
+
+## Spoiler Protection
+
+The selected reading chapter is stored in `ReadingProgress`. Analysis context and retrieval queries filter chapters in the database before content is sent to the AI layer:
+
+```text
+Reader boundary: chapter 5
+Allowed: chapters 1–5
+Forbidden: chapter 6 and later
 ```
 
-## Django apps
+Prompts reinforce this rule, but the database filter is the primary protection.
 
-| App | Role |
+## Development
+
+```powershell
+pytest
+python manage.py check
+python manage.py makemigrations --check --dry-run
+```
+
+| App | Responsibility |
 |---|---|
-| `config` | Project settings and URLs |
-| `novels` | Books and chapters |
-| `story` | Extracted narrative memory |
-| `reading` | Progress, recaps, chat |
-| `api` | REST API |
-| `web` | Templates |
-| `ai` | LLM provider, prompts, RAG (Python package) |
+| `config` | Django settings and project URLs |
+| `novels` | Books, chapters, imports, and embedding chunks |
+| `reading` | Reading progress, boundaries, sessions, and cached recaps |
+| `story` | Characters, relationships, events, themes, and details |
+| `ai` | Provider abstraction, analysis, embeddings, and retrieval |
+| `api` | REST API and health endpoint |
+| `web` | Page views and templates |
 
-See `docs/IMPLEMENTATION_PLAN.md` for the full architecture.
+## Security
+
+- Keep API credentials only in `.env`.
+- Do not commit database files, uploaded books, or generated local indexes.
+- Revoke any credential that has been exposed and replace it before deployment.
+- The development server is not suitable for production use.
