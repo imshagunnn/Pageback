@@ -13,7 +13,7 @@
     {% if novels %}
         <div class="dashboard-stats">
             <div><strong>{{ novels|length }}</strong><span>book{{ novels|length|pluralize }}</span></div>
-            <div><strong>{{ total_chapters }}</strong><span>chapter{{ total_chapters|pluralize }}</span></div>
+            <div><strong>{{ total_chapters }}</strong><span>story section{{ total_chapters|pluralize }}</span></div>
             <div><strong>Private</strong><span>your library</span></div>
         </div>
         <div class="section-heading"><h2>Continue reading</h2><span>Select a book to open its dashboard</span></div>
@@ -21,9 +21,12 @@
             {% for novel in novels %}
                 <li class="book-item">
                     <a class="book-link" href="{% url 'novel_detail' novel.id %}">
+                    {% if novel.cover_image %}<img class="book-cover" src="{{ novel.cover_image.url }}" alt="Cover of {{ novel.title }}">{% else %}<div class="book-cover placeholder-cover" aria-label="PageBack placeholder cover">PB</div>{% endif %}
+                    <span class="book-copy">
                     <strong>{{ novel.title }}</strong>
                     {% if novel.author %}<span>{{ novel.author }}</span>{% endif %}
-                    <span>{{ novel.total_chapters }} chapter{{ novel.total_chapters|pluralize }}</span>
+                    {% if novel.current_reading_chapter %}<span>{{ novel.current_reading_chapter.title }} of {{ novel.total_chapters }} · {{ novel.progress_percent }}% complete</span>{% else %}<span>{{ novel.total_chapters }} story section{{ novel.total_chapters|pluralize }}</span>{% endif %}
+                    </span>
                     </a>
                 </li>
             {% endfor %}

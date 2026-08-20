@@ -47,3 +47,17 @@ def cache_recaps(user, novel: Novel, start: int, boundary: int, analysis: dict, 
                 "source_updated_at": latest_updated,
             },
         )
+
+
+def get_cached_analysis(user, novel: Novel, start: int, boundary: int, chapters):
+    """Return a cached range analysis while its source chapters are unchanged."""
+    latest_updated = chapters.last().updated_at
+    cached = Recap.objects.filter(
+        user=user,
+        novel=novel,
+        from_chapter=start,
+        to_chapter=boundary,
+    ).order_by("-created_at").first()
+    if cached and cached.source_updated_at >= latest_updated and cached.structured_data:
+        return cached.structured_data
+    return None

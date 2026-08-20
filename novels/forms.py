@@ -22,5 +22,5 @@ class NovelImportForm(forms.Form):
 
 
 class AnalysisForm(forms.Form):
-    from_chapter = forms.IntegerField(min_value=1, label="Start at chapter", initial=1)
-    through_chapter = forms.IntegerField(min_value=1, label="Analyze through chapter")
+    from_chapter = forms.IntegerField(min_value=1, label="Start at section", initial=1)
+    through_chapter = forms.IntegerField(min_value=1, label="Analyze through section")

@@ -3,6 +3,7 @@
 {% block content %}
 <section class="library novel-page">
     <p class="eyebrow">Your reading dashboard</p>
+    {% if novel.cover_image %}<img class="detail-cover" src="{{ novel.cover_image.url }}" alt="Cover of {{ novel.title }}">{% else %}<div class="detail-cover placeholder-cover" aria-label="PageBack placeholder cover">PB</div>{% endif %}
     <h1>{{ novel.title }}</h1>
     {% if novel.author %}<p class="lede">{{ novel.author }}</p>{% endif %}
     <div class="actions">
@@ -13,15 +14,15 @@
         <div>
             <p class="board-kicker">Spoiler-safe boundary</p>
             <h2>How far have you read?</h2>
-            <p>PageBack only uses chapters up to this point for your summary and character analysis. This book has {{ chapter_count }} available chapters.</p>
-            {% if progress.current_chapter %}<p class="boundary">Saved reading boundary · Chapter {{ progress.boundary_chapter_number }}</p>{% endif %}
+            <p>PageBack only uses story sections up to this point for your summary and character analysis. This book has {{ chapter_count }} available sections.</p>
+            {% if progress.current_chapter %}<p class="boundary">Saved reading boundary · {{ progress.current_chapter.title }} of {{ chapter_count }} · {{ progress_percent }}% complete</p><progress max="100" value="{{ progress_percent }}">{{ progress_percent }}%</progress>{% endif %}
         </div>
         <form method="post" class="boundary-form">
             {% csrf_token %}
             {{ form.through_chapter.errors }}
-            <label for="id_from_chapter">Recap from chapter</label>
+            <label for="id_from_chapter">Recap from section</label>
             <input id="id_from_chapter" name="from_chapter" type="number" min="1" max="{{ chapter_count }}" value="{{ form.from_chapter.value|default:1 }}" required>
-            <label for="id_through_chapter">Through chapter</label>
+            <label for="id_through_chapter">Through section</label>
             <input id="id_through_chapter" name="through_chapter" type="number" min="1" max="{{ chapter_count }}" value="{{ form.through_chapter.value|default:1 }}" required>
             <button class="btn primary" type="submit">Analyze my reading</button>
         </form>
@@ -37,7 +38,7 @@
             </div>
             {% if novel.analysis.summary %}
                 <div class="recap-copy" data-recap-output>{{ novel.analysis.recaps.quick|default:novel.analysis.summary|linebreaks }}</div>
-                <p class="board-meta">Through chapter {{ novel.analysis_boundary }} · {{ novel.analysis.word_count }} words · {{ novel.analysis.provider|title }} analysis</p>
+                <p class="board-meta">Sections {{ novel.analysis.from_chapter|default:1 }}–{{ novel.analysis.through_chapter|default:novel.analysis_boundary }} · {{ novel.analysis.word_count }} words · {{ novel.analysis.provider|title }} analysis</p>
                 {% if novel.analysis.ai_error %}<p class="ai-status">{{ novel.analysis.ai_error }}</p>{% endif %}
             {% else %}<p class="empty">Choose your chapter boundary above to generate your first summary.</p>{% endif %}
         </article>
