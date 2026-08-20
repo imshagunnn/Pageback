@@ -104,6 +104,68 @@ def test_existing_multi_chapter_book_accepts_chapter_six(client, db):
     assert Recap.objects.filter(user=user, novel=novel, from_chapter=2, to_chapter=6).count() == 3
 
 
+def test_dashboard_shows_story_progress_percentage(client, db):
+    user = User.objects.create_user(username="progress_reader", password="Pageback-check-2026")
+    novel = Novel.objects.create(owner=user, title="Progress Book")
+    chapters = [
+        Chapter.objects.create(novel=novel, chapter_number=number, title=f"Night {number}", content="Text.")
+        for number in range(1, 5)
+    ]
+    ReadingProgress.objects.create(user=user, novel=novel, current_chapter=chapters[1])
+    client.force_login(user)
+
+    response = client.get(reverse("dashboard"))
+
+    assert response.status_code == 200
+    assert b"Night 2 of 4" in response.content
+    assert b"50% complete" in response.content
+
+
+def test_analysis_range_is_preserved_after_submission(client, db):
+    user = User.objects.create_user(username="range_reader", password="Pageback-check-2026")
+    novel = Novel.objects.create(owner=user, title="Range Book")
+    for chapter_number in range(1, 15):
+        Chapter.objects.create(
+            novel=novel,
+            chapter_number=chapter_number,
+            content=f"Chapter {chapter_number} begins in the selected range.",
+        )
+    client.force_login(user)
+
+    response = client.post(
+        reverse("novel_detail", kwargs={"novel_id": novel.id}),
+        {"from_chapter": 7, "through_chapter": 14},
+    )
+    assert response.status_code == 302
+    follow = client.get(response.url)
+
+    assert b'value="7"' in follow.content
+    assert b'value="14"' in follow.content
+    assert Recap.objects.filter(user=user, novel=novel, from_chapter=7, to_chapter=14).exists()
+
+
+def test_recap_lengths_are_distinct_and_meaningful():
+    from ai.analyzer import analyze_text
+
+    text = " ".join(
+        [
+            "Mira arrived at the old station before sunrise.",
+            "She found a sealed letter tucked under the bench.",
+            "The letter named a hidden passage under the clocktower.",
+            "At dusk, she followed the tunnel and saw the forgotten archive.",
+            "Inside, she learned the city had buried a rebellion years before.",
+            "Her brother was one of the missing leaders.",
+            "She decided to return at dawn with the evidence.",
+        ]
+    )
+
+    result = analyze_text(text)
+    assert len(result["recaps"]["quick"]) >= 40
+    assert len(result["recaps"]["standard"]) > len(result["recaps"]["quick"])
+    assert len(result["recaps"]["detailed"]) > len(result["recaps"]["standard"])
+    assert result["summary"] == result["recaps"]["standard"]
+
+
 def test_analysis_boundary_excludes_future_chapters(client, db):
     user = User.objects.create_user(username="spoiler_reader", password="Pageback-check-2026")
     novel = Novel.objects.create(owner=user, title="Boundary Book")
@@ -193,6 +255,42 @@ def test_ai_fallback_explains_provider_failure(monkeypatch, settings):
     result = analyzer.analyze_text_with_ai("A short chapter.", "Book", 1)
     assert result["provider"] == "local"
     assert "AI analysis failed" in result["ai_error"]
+
+
+def test_ai_structured_output_is_normalized(monkeypatch, settings):
+    from ai import analyzer
+
+    settings.PAGEBACK_AI["api_key"] = "configured"
+
+    class MalformedProvider:
+        def __init__(self, **_kwargs):
+            pass
+
+        def generate_structured(self, *_args, **_kwargs):
+            return {"summary": "A valid summary.", "recaps": [], "character_details": "wrong"}
+
+    monkeypatch.setattr(analyzer, "GeminiProvider", MalformedProvider)
+    result = analyzer.analyze_text_with_ai("A short chapter.", "Book", 1)
+
+    assert result["provider"] == "gemini"
+    assert result["recaps"]["quick"] == "A valid summary."
+    assert result["character_details"] == []
+
+
+def test_cached_analysis_is_reused_for_same_range(client, db, settings):
+    settings.PAGEBACK_AI["api_key"] = ""
+    user = User.objects.create_user(username="cache_reader", password="Pageback-check-2026")
+    novel = Novel.objects.create(owner=user, title="Cached Book")
+    for number in range(1, 3):
+        Chapter.objects.create(novel=novel, chapter_number=number, content=f"Chapter {number}.")
+    client.force_login(user)
+
+    first = client.post(reverse("novel_detail", kwargs={"novel_id": novel.id}), {"from_chapter": 1, "through_chapter": 2})
+    second = client.post(reverse("novel_detail", kwargs={"novel_id": novel.id}), {"from_chapter": 1, "through_chapter": 2})
+
+    assert first.status_code == 302
+    assert second.status_code == 302
+    assert Recap.objects.filter(user=user, novel=novel, from_chapter=1, to_chapter=2).count() == 3
 
 
 def test_legacy_local_analysis_explains_how_to_regenerate(client, db):

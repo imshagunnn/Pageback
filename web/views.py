@@ -30,6 +30,10 @@ def demo(request):
 
 @login_required
 def dashboard(request):
-    novels = request.user.novels.all() if hasattr(request.user, "novels") else []
+    novels = list(request.user.novels.prefetch_related("chapters", "reading_progress__current_chapter")) if hasattr(request.user, "novels") else []
+    for novel in novels:
+        progress = novel.reading_progress.first()
+        novel.current_reading_chapter = progress.current_chapter if progress else None
+        novel.progress_percent = round((progress.boundary_chapter_number / novel.total_chapters) * 100) if progress and novel.total_chapters else 0
     total_chapters = sum(novel.total_chapters for novel in novels)
     return render(request, "web/dashboard.html", {"novels": novels, "total_chapters": total_chapters})
