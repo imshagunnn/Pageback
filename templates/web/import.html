@@ -26,6 +26,7 @@
         </p>
         <button type="submit" class="btn primary">Add to library</button>
     </form>
+    {% if existing_novel %}<p class="note">This book is already in your library. <a href="{% url 'novel_detail' existing_novel.id %}">Open existing book</a>{% if existing_novel.status == 'trashed' %} or <a href="{% url 'dashboard' %}?section=trash">restore it from Trash</a>{% endif %}.</p>{% endif %}
     <p class="note"><a href="{% url 'dashboard' %}">Back to your library</a></p>
 </section>
 {% endblock %}

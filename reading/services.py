@@ -1,6 +1,6 @@
 from django.utils import timezone
 
-from novels.models import Chapter, Novel
+from novels.models import Chapter, Novel, NovelStatus
 from reading.models import ReadingProgress, ReadingStatus
 from reading.models import Recap, RecapType
 
@@ -24,6 +24,10 @@ def set_reading_boundary(user, novel: Novel, boundary: int) -> ReadingProgress:
     progress.last_read_at = timezone.now()
     progress.reading_status = ReadingStatus.READING
     progress.save(update_fields=["current_chapter", "last_read_at", "reading_status"])
+    novel.status = NovelStatus.COMPLETED if boundary >= novel.total_chapters else NovelStatus.ACTIVE
+    novel.completed_at = timezone.now() if novel.status == NovelStatus.COMPLETED else None
+    novel.last_opened_at = timezone.now()
+    novel.save(update_fields=["status", "completed_at", "last_opened_at", "updated_at"])
     return progress
 
 

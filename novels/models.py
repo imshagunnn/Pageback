@@ -8,6 +8,13 @@ from django.conf import settings
 from django.db import models
 
 
+class NovelStatus(models.TextChoices):
+    ACTIVE = "active", "Active"
+    COMPLETED = "completed", "Completed"
+    ARCHIVED = "archived", "Archived"
+    TRASHED = "trashed", "Trash"
+
+
 class ProcessingStatus(models.TextChoices):
     PENDING = "pending", "Pending"
     PROCESSING = "processing", "Processing"
@@ -31,6 +38,13 @@ class Novel(models.Model):
     total_chapters = models.PositiveIntegerField(default=0)
     analysis_boundary = models.PositiveIntegerField(default=1)
     analysis = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=20, choices=NovelStatus.choices, default=NovelStatus.ACTIVE)
+    is_favorite = models.BooleanField(default=False)
+    source_fingerprint = models.CharField(max_length=64, blank=True, db_index=True)
+    deleted_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    last_opened_at = models.DateTimeField(blank=True, null=True)
+    collections = models.ManyToManyField("Collection", blank=True, related_name="novels")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -48,6 +62,26 @@ class Novel(models.Model):
         if self.total_chapters != count:
             self.total_chapters = count
             self.save(update_fields=["total_chapters", "updated_at"])
+
+
+class Collection(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="book_collections",
+    )
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "name"], name="unique_collection_name_per_user"),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Chapter(models.Model):

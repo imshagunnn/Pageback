@@ -1,7 +1,9 @@
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.utils import timezone
 import logging
+import hashlib
 
 from novels.forms import AnalysisForm, NovelImportForm
 from novels.importers import extract_book_cover, extract_book_structure
@@ -20,6 +22,13 @@ def import_novel(request):
 		form = NovelImportForm(request.POST, request.FILES)
 		if form.is_valid():
 			try:
+				raw_upload = form.cleaned_data["text_file"].read()
+				form.cleaned_data["text_file"].seek(0)
+				fingerprint = hashlib.sha256(raw_upload).hexdigest()
+				existing = request.user.novels.filter(source_fingerprint=fingerprint).first()
+				if existing:
+					form.add_error("text_file", "This book is already in your library.")
+					return render(request, "web/import.html", {"form": form, "existing_novel": existing})
 				import_summary = extract_book_structure(form.cleaned_data["text_file"])
 				chapters = import_summary.sections
 				cover = extract_book_cover(form.cleaned_data["text_file"])
@@ -45,6 +54,7 @@ def import_novel(request):
 							owner=request.user,
 							title=form.cleaned_data["title"],
 							author=form.cleaned_data["author"],
+							source_fingerprint=fingerprint,
 						)
 						for chapter_number, section in enumerate(chapters, start=1):
 							Chapter.objects.create(
@@ -69,6 +79,8 @@ def import_novel(request):
 @login_required
 def novel_detail(request, novel_id):
 	novel = request.user.novels.prefetch_related("chapters").get(id=novel_id)
+	novel.last_opened_at = timezone.now()
+	novel.save(update_fields=["last_opened_at", "updated_at"])
 	chapters = list(novel.chapters.all())
 	progress = get_progress(request.user, novel)
 	progress_percent = round((progress.boundary_chapter_number / len(chapters)) * 100) if chapters and progress.boundary_chapter_number else 0

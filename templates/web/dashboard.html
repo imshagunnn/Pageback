@@ -3,43 +3,38 @@
 {% block content %}
 <section class="library">
     <div class="dashboard-hero">
-        <div>
-            <p class="eyebrow">Your reading room</p>
-            <h1>Your library</h1>
-            <p class="lede">Welcome back, {{ user.username }}. Choose a book, set your reading boundary, and let PageBack bring the story back into focus.</p>
-        </div>
+        <div><p class="eyebrow">Your reading room</p><h1>Your library</h1><p class="lede">{{ counts.all }} book{{ counts.all|pluralize }} · {{ counts.reading }} currently reading · {{ counts.completed }} completed</p></div>
         <a class="btn primary" href="{% url 'import_novel' %}">Import a book</a>
     </div>
+    <form method="get" class="library-tools"><input type="search" name="q" value="{{ query }}" placeholder="Search your library..." aria-label="Search your library"><select name="sort" aria-label="Sort library"><option value="recent"{% if sort == "recent" %} selected{% endif %}>Recently opened</option><option value="title"{% if sort == "title" %} selected{% endif %}>Title</option><option value="author"{% if sort == "author" %} selected{% endif %}>Author</option><option value="progress"{% if sort == "progress" %} selected{% endif %}>Progress</option></select><button class="btn" type="submit">Search</button></form>
+    <nav class="library-nav" aria-label="Library sections"><a class="{% if section == 'all' %}is-on{% endif %}" href="?section=all">All Books <span>{{ counts.all }}</span></a><a class="{% if section == 'reading' %}is-on{% endif %}" href="?section=reading">Currently Reading <span>{{ counts.reading }}</span></a><a class="{% if section == 'completed' %}is-on{% endif %}" href="?section=completed">Completed <span>{{ counts.completed }}</span></a><a class="{% if section == 'favorites' %}is-on{% endif %}" href="?section=favorites">Favorites <span>{{ counts.favorites }}</span></a><a class="{% if section == 'archive' %}is-on{% endif %}" href="?section=archive">Archive <span>{{ counts.archive }}</span></a><a class="{% if section == 'trash' %}is-on{% endif %}" href="?section=trash">Trash <span>{{ counts.trash }}</span></a></nav>
+    <div class="collection-strip"><span class="board-kicker">Collections</span>{% for collection in collections %}<a class="collection-chip" href="{% url 'collection_detail' collection.id %}">{{ collection.name }}</a>{% empty %}<span class="note">No collections yet.</span>{% endfor %}<form method="post" action="{% url 'create_collection' %}" class="inline-collection-form">{% csrf_token %}<input name="name" placeholder="New collection" aria-label="New collection name" required><button class="btn compact" type="submit">+ New</button></form></div>
     {% if novels %}
-        <div class="dashboard-stats">
-            <div><strong>{{ novels|length }}</strong><span>book{{ novels|length|pluralize }}</span></div>
-            <div><strong>{{ total_chapters }}</strong><span>story section{{ total_chapters|pluralize }}</span></div>
-            <div><strong>Private</strong><span>your library</span></div>
-        </div>
-        <div class="section-heading"><h2>Continue reading</h2><span>Select a book to open its dashboard</span></div>
-        <ul class="book-list">
-            {% for novel in novels %}
-                <li class="book-item">
-                    <a class="book-link" href="{% url 'novel_detail' novel.id %}">
-                    {% if novel.cover_image %}<img class="book-cover" src="{{ novel.cover_image.url }}" alt="Cover of {{ novel.title }}">{% else %}<div class="book-cover placeholder-cover" aria-label="PageBack placeholder cover">PB</div>{% endif %}
-                    <span class="book-copy">
-                    <strong>{{ novel.title }}</strong>
-                    {% if novel.author %}<span>{{ novel.author }}</span>{% endif %}
-                    {% if novel.current_reading_chapter %}<span>{{ novel.current_reading_chapter.title }} of {{ novel.total_chapters }} · {{ novel.progress_percent }}% complete</span>{% else %}<span>{{ novel.total_chapters }} story section{{ novel.total_chapters|pluralize }}</span>{% endif %}
+        <div class="section-heading"><h2>{% if selected_collection %}{{ selected_collection.name }}{% elif section == 'reading' %}Currently reading{% elif section == 'completed' %}Completed{% elif section == 'favorites' %}Favorites{% elif section == 'archive' %}Archive{% elif section == 'trash' %}Trash{% else %}All books{% endif %}</h2><span>{{ novels|length }} book{{ novels|length|pluralize }}</span></div>
+        <ul class="book-list bookshelf">
+        {% for novel in novels %}
+            <li class="book-item {% if novel.status == 'archived' %}is-archived{% elif novel.status == 'trashed' %}is-trashed{% endif %}">
+                <div class="book-link">
+                    <a href="{% url 'novel_detail' novel.id %}">{% if novel.cover_image %}<img class="book-cover" src="{{ novel.cover_image.url }}" alt="Cover of {{ novel.title }}">{% else %}<div class="book-cover placeholder-cover">PB</div>{% endif %}</a>
+                    <span class="book-copy"><strong>{{ novel.title }}</strong>{% if novel.author %}<span>{{ novel.author }}</span>{% endif %}{% if novel.is_completed %}<span class="book-status">Completed{% if novel.completed_at %} · {{ novel.completed_at|date:"M j, Y" }}{% endif %}</span>{% elif novel.is_currently_reading %}<span class="book-status">{{ novel.current_reading_chapter.title }} of {{ novel.total_chapters }} · {{ novel.progress_percent }}% complete</span>{% elif novel.status == 'archived' %}<span class="book-status">Archived</span>{% elif novel.status == 'trashed' %}<span class="book-status">In Trash</span>{% else %}<span class="book-status">Not started · {{ novel.total_chapters }} sections</span>{% endif %}<span class="book-actions"><a class="btn compact" href="{% url 'novel_detail' novel.id %}">{% if novel.is_currently_reading %}Continue{% else %}Open{% endif %}</a>{% if novel.is_currently_reading %}<a class="btn compact" href="{% url 'novel_detail' novel.id %}#analysis">Catch Me Up</a>{% endif %}</span></span>
+                    <span class="book-menu">
+                        <form method="post" action="{% url 'library_action' novel.id %}">{% csrf_token %}<input type="hidden" name="action" value="favorite"><button type="submit" title="Favorite">{% if novel.is_favorite %}★{% else %}☆{% endif %}</button></form>
+                        {% if collections %}<form method="post" action="{% url 'library_action' novel.id %}" class="collection-picker">{% csrf_token %}<input type="hidden" name="action" value="collections"><label>Collections</label><select name="collection_ids" multiple>{% for collection in collections %}<option value="{{ collection.id }}"{% if collection in novel.collections.all %} selected{% endif %}>{{ collection.name }}</option>{% endfor %}</select><button type="submit">Save collections</button></form>{% endif %}
+                        {% if novel.status == 'trashed' %}<form method="post" action="{% url 'library_action' novel.id %}">{% csrf_token %}<input type="hidden" name="action" value="restore"><button type="submit">Restore</button></form><form method="post" action="{% url 'library_action' novel.id %}">{% csrf_token %}<input type="hidden" name="action" value="permanent_delete"><button type="submit">Delete permanently</button></form>{% elif novel.status == 'archived' %}<form method="post" action="{% url 'library_action' novel.id %}">{% csrf_token %}<input type="hidden" name="action" value="restore"><button type="submit">Restore</button></form><form method="post" action="{% url 'library_action' novel.id %}">{% csrf_token %}<input type="hidden" name="action" value="trash"><button type="submit">Move to Trash</button></form>{% else %}{% if novel.is_completed %}<form method="post" action="{% url 'library_action' novel.id %}">{% csrf_token %}<input type="hidden" name="action" value="restart"><button type="submit">Restart reading</button></form>{% endif %}<form method="post" action="{% url 'library_action' novel.id %}">{% csrf_token %}<input type="hidden" name="action" value="archive"><button type="submit">Archive</button></form><form method="post" action="{% url 'library_action' novel.id %}">{% csrf_token %}<input type="hidden" name="action" value="trash"><button type="submit">Move to Trash</button></form>{% endif %}
                     </span>
-                    </a>
-                </li>
-            {% endfor %}
+                </div>
+            </li>
+        {% endfor %}
         </ul>
-    {% else %}
-        <div class="empty-state">
-            <p class="eyebrow">Your first book</p>
-            <h2>Make the library yours.</h2>
-            <p class="empty">Upload a TXT, PDF, or EPUB and PageBack will split it into chapters without making you paste the text.</p>
-        </div>
-        <div class="actions">
-            <a class="btn primary" href="{% url 'demo' %}">Explore the White Nights demo</a>
-        </div>
-    {% endif %}
+    {% else %}<div class="empty-state"><p class="eyebrow">Nothing here yet</p><h2>{% if section == 'reading' %}No books in progress yet.{% elif section == 'completed' %}You haven't finished a book yet.{% elif section == 'favorites' %}No favorites yet.{% elif section == 'archive' %}Your archived books will appear here.{% elif section == 'trash' %}Trash is empty.{% else %}Make the library yours.{% endif %}</h2><p class="empty">{% if section == 'all' %}Import a book and PageBack will keep your reading memory close.{% else %}<a href="?section=all">Browse your library</a>{% endif %}</p></div>{% endif %}
 </section>
+{% endblock %}
+{% block scripts %}
+<script>
+    document.querySelectorAll('form[action*="library-action"]').forEach((form) => {
+        const action = form.querySelector('input[name="action"]')?.value;
+        if (action === "trash") form.addEventListener("submit", (event) => { if (!window.confirm("Move this book to Trash?\n\nThis book will be removed from your active library but can be restored from Trash.")) event.preventDefault(); });
+        if (action === "permanent_delete") form.addEventListener("submit", (event) => { if (!window.confirm("Permanently delete this book?\n\nThis cannot be undone.")) event.preventDefault(); });
+    });
+</script>
 {% endblock %}

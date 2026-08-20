@@ -432,6 +432,25 @@ button.btn.primary {
 .placeholder-cover { display: grid; place-items: center; background: var(--ink); color: var(--cream); font-family: Georgia, serif; font-size: 1.4rem; letter-spacing: .08em; }
 .book-copy { display: grid; gap: .25rem; }
 .book-copy span { color: var(--muted); font-size: .9rem; }
+.library-tools { display: flex; gap: .65rem; margin: 1.5rem 0; }
+.library-tools input, .library-tools select, .inline-collection-form input, .collection-picker select { border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: .65rem .75rem; font: inherit; }
+.library-tools input { flex: 1; min-width: 12rem; }
+.library-nav { display: flex; flex-wrap: wrap; gap: .35rem; border-bottom: 1px solid var(--line); padding-bottom: .75rem; margin-bottom: 1rem; }
+.library-nav a, .collection-chip { color: var(--muted); padding: .45rem .65rem; text-decoration: none; }
+.library-nav a.is-on, .library-nav a:hover, .collection-chip:hover { color: var(--ink); background: var(--wash); }
+.library-nav span { font-size: .78rem; }
+.collection-strip { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin: 1rem 0 1.5rem; }
+.inline-collection-form { display: inline-flex; gap: .35rem; margin-left: auto; }
+.book-menu { display: grid; gap: .45rem; margin-left: auto; align-self: flex-start; }
+.book-menu button { border: 0; background: transparent; color: var(--muted); cursor: pointer; text-align: left; font: inherit; }
+.book-menu button:hover { color: var(--ink); }
+.book-menu form:first-child button { font-size: 1.25rem; }
+.collection-picker { display: grid; gap: .25rem; }
+.collection-picker label { color: var(--muted); font-size: .78rem; }
+.collection-picker select { min-width: 9rem; min-height: 3.2rem; padding: .25rem; }
+.book-status { color: var(--ink) !important; }
+.is-archived, .is-trashed { opacity: .72; }
+.book-actions { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
 
 .book-link {
     display: grid;
